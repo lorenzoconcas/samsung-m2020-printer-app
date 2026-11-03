@@ -22,7 +22,7 @@ Il linguaggio della stampante (QPDL v3, compressione 0x11) è generato da [SpliX
 | Formati in ingresso PWG raster e PNG | ✅ testati (URF e JPEG passano dallo stesso percorso PAPPL, non testati qui) |
 | Copie, A4/A5/Letter…, modalità bozza (toner save), densità toner | ✅ verificati nel flusso PJL/QPDL generato |
 | Stampa reale su M2026 via USB, Raspberry Pi (Ubuntu arm64) | ✅ funziona |
-| Build su macOS 27 arm64 | ⏳ da provare (script pronto) |
+| Build e stampa USB su macOS 27 arm64 | ✅ funziona (testato in primo piano; LaunchAgent non testato) |
 
 ## 1. Compilazione
 
