@@ -1,0 +1,4 @@
+/build/
+/samsung-m2020-printer-app
+*.o
+*.dSYM/

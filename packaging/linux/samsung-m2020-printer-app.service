@@ -1,0 +1,17 @@
+[Unit]
+Description=Samsung M2020 Printer Application (PAPPL + SpliX)
+Documentation=https://github.com/OpenPrinting/splix
+After=network-online.target avahi-daemon.service
+Wants=network-online.target avahi-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/samsung-m2020-printer-app server -o log-file=- -o log-level=info -o server-port=8000
+ExecStop=/usr/local/bin/samsung-m2020-printer-app shutdown
+Restart=on-failure
+RestartSec=5
+# Uncomment to allow 1200 dpi (print-quality=normal/high would then use it):
+#Environment=M2020_ENABLE_1200DPI=1
+
+[Install]
+WantedBy=multi-user.target
