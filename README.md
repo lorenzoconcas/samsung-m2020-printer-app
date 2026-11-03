@@ -21,7 +21,7 @@ Il linguaggio della stampante (QPDL v3, compressione 0x11) è generato da [SpliX
 | Compilazione e catena PAPPL → SpliX → QPDL | ✅ testata (Linux, output su file) |
 | Formati in ingresso PWG raster e PNG | ✅ testati (URF e JPEG passano dallo stesso percorso PAPPL, non testati qui) |
 | Copie, A4/A5/Letter…, modalità bozza (toner save), densità toner | ✅ verificati nel flusso PJL/QPDL generato |
-| Stampa reale su M2026 via USB | ⏳ **da provare sul tuo hardware** |
+| Stampa reale su M2026 via USB, Raspberry Pi (Ubuntu arm64) | ✅ funziona |
 | Build su macOS 27 arm64 | ⏳ da provare (script pronto) |
 
 ## 1. Compilazione
@@ -111,6 +111,10 @@ samsung-m2020-printer-app jobs -d M2026 -a
 Solo fronte (la M2020 non ha duplex; il duplex manuale di SpliX non è esposto).
 
 ## Risoluzione problemi
+
+- **Stampante bloccata, LED giallo lampeggiante e, dopo un po', una pagina "SPL ERROR - Incomplete Session by time out"**: il firmware non tollera pacchetti USB corti a metà flusso. L'app quindi invia i dati in blocchi pieni da 8192 byte (come il driver `usblp` del kernel), tranne l'ultimo. Se modifichi il codice di invio, mantieni questa regola.
+- **Porta 8000 già occupata**: cambia `server-port=` nel file del servizio (sul Pi è stato usato 8631).
+- **Il driver `usblp` del kernel occupa la stampante** (dopo test con `/dev/usb/lp0`): `sudo modprobe -r usblp`, poi riavvia il servizio.
 
 - **Log dettagliato**: avvia con `-o log-level=debug`. I messaggi di SpliX compaiono con prefisso `SpliX:`.
 - **Pagine bianche o spazzatura**: avvia con la variabile `M2020_KEEP_RASTER=1`; il raster intermedio resta in `$TMPDIR` (percorso nel log) per l'analisi. Prova anche senza 1200 dpi.
