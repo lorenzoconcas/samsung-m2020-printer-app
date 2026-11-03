@@ -15,6 +15,7 @@ bindir		= $(prefix)/bin
 libexecdir	= $(prefix)/libexec/$(NAME)
 datadir		= $(prefix)/share/$(NAME)
 SPLIX_FILTER	?= $(DEPS)/libexec/splix/rastertoqpdl
+SERVERROOT	?= /var/lib/$(NAME)/cups
 
 PKGCONFIG	= PKG_CONFIG_PATH="$(DEPS)/lib/pkgconfig:$$PKG_CONFIG_PATH" pkg-config
 
@@ -41,6 +42,10 @@ install: $(NAME)
 	install -m 755 $(NAME) $(DESTDIR)$(bindir)/$(NAME)
 	install -m 755 $(SPLIX_FILTER) $(DESTDIR)$(libexecdir)/rastertoqpdl
 	install -m 644 ppd/m2020.ppd $(DESTDIR)$(datadir)/m2020.ppd
+ifeq ($(UNAME),Linux)
+	# TLS certificate store used by libcups when the service runs as root
+	install -d -m 0700 $(DESTDIR)$(SERVERROOT) $(DESTDIR)$(SERVERROOT)/ssl
+endif
 
 clean:
 	rm -f $(NAME)

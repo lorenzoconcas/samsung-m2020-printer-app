@@ -29,6 +29,12 @@ PAPPL_REF=${PAPPL_REF:-v1.4.9}
 SPLIX_URL=https://github.com/OpenPrinting/splix.git
 SPLIX_REF=${SPLIX_REF:-7a802180c7b50802aaa16bbd2b3e326237286730}	# 2.0.2+ (M2020 support)
 
+# Where libcups keeps the server's TLS certificate when running as root
+# (compiled into libcups; must match SERVERROOT in the Makefile and must
+# exist at run time: "make install" creates it).  Non-root runs, such as the
+# macOS LaunchAgent, use ~/.cups/ssl instead.
+SERVERROOT=${SERVERROOT:-/var/lib/samsung-m2020-printer-app/cups}
+
 if [ "$OS" = Darwin ]; then
     JOBS=$(sysctl -n hw.ncpu)
 else
@@ -92,6 +98,7 @@ fetch "$SRC/cups" "$CUPS_URL" "$CUPS_REF"
 (
     cd "$SRC/cups"
     ./configure --prefix="$DEPS" --libdir="$DEPS/lib" \
+        --sysconfdir="$(dirname "$SERVERROOT")" \
         --disable-shared --enable-static \
         --with-tls=openssl --with-dnssd=no \
         --disable-gssapi --disable-dbus >configure.log 2>&1 \
@@ -116,7 +123,7 @@ cat >"$DEPS/lib/pkgconfig/cups.pc" <<EOF
 prefix=$DEPS
 includedir=\${prefix}/include
 libdir=\${prefix}/lib
-cups_serverroot=/etc/cups
+cups_serverroot=$SERVERROOT
 
 Name: CUPS
 Description: CUPS API Library (static, private build)
