@@ -48,6 +48,7 @@
 #define M2K_DRIVER	"samsung_m2020"	// Driver name
 #define M2K_COMPRESSION	17		// QPDL algorithm 0x11 (from m2020.ppd)
 #define M2K_MARGIN	441		// 12.5pt hardware margins in 1/100mm
+#define M2K_USB_BLOCK	8192		// USB write block (multiple of 512, same as usblp)
 
 
 //
@@ -663,6 +664,8 @@ m2k_run_filter(pappl_job_t    *job,	// I - Job
   size_t	total = 0;		// Total bytes sent
   bool		ok = true;		// Write status
   char		buffer[65536];		// Copy buffer
+  unsigned char	block[M2K_USB_BLOCK];	// Full-size USB write block
+  size_t	blockused = 0;		// Bytes used in block
   const char	*tmpdir;		// Temporary directory
   FILE		*errfp;			// stderr capture stream
 
@@ -770,18 +773,55 @@ m2k_run_filter(pappl_job_t    *job,	// I - Job
       continue;
     }
 
-    if (papplDeviceWrite(device, buffer, (size_t)bytes) < 0)
+    // The printer's firmware does not tolerate short USB packets in the middle
+    // of the stream (they show up as "SPL ERROR - Incomplete Session by time
+    // out"), so repack the data into full M2K_USB_BLOCK byte blocks exactly
+    // like the Linux "usblp" driver does; only the very last block may be
+    // short.
     {
-      papplLogJob(job, PAPPL_LOGLEVEL_ERROR, "Unable to send %d bytes to printer.", (int)bytes);
-      kill(pid, SIGTERM);
-      ok = false;
-      continue;
+      const unsigned char *src = (const unsigned char *)buffer;
+					// Source pointer
+      size_t	left = (size_t)bytes,	// Bytes left to repack
+		n;			// Bytes to copy
+
+      while (left > 0)
+      {
+        n = sizeof(block) - blockused;
+        if (n > left)
+          n = left;
+
+        memcpy(block + blockused, src, n);
+        blockused += n;
+        src       += n;
+        left      -= n;
+
+        if (blockused == sizeof(block))
+        {
+          if (papplDeviceWrite(device, block, sizeof(block)) < 0)
+          {
+            papplLogJob(job, PAPPL_LOGLEVEL_ERROR, "Unable to send %d bytes to printer.", (int)sizeof(block));
+            kill(pid, SIGTERM);
+            ok = false;
+            break;
+          }
+
+          blockused = 0;
+        }
+      }
     }
 
     total += (size_t)bytes;
   }
 
   close(outpipe[0]);
+
+  // Send the final (possibly short) block...
+  if (ok && blockused > 0 && papplDeviceWrite(device, block, blockused) < 0)
+  {
+    papplLogJob(job, PAPPL_LOGLEVEL_ERROR, "Unable to send last %d bytes to printer.", (int)blockused);
+    ok = false;
+  }
+
   papplDeviceFlush(device);
 
   while (waitpid(pid, &status, 0) < 0 && errno == EINTR);
