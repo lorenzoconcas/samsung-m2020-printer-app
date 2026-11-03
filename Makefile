@@ -24,7 +24,7 @@ CFLAGS		+= -Wall -Wextra -Wno-unused-parameter $(shell $(PKGCONFIG) --cflags pap
 CPPFLAGS	+= -DVERSION=\"$(VERSION)\" \
 		   -DM2K_FILTER=\"$(libexecdir)/rastertoqpdl\" \
 		   -DM2K_PPD=\"$(datadir)/m2020.ppd\"
-LIBS		= $(shell $(PKGCONFIG) --libs --static pappl)
+LIBS		= $(shell $(PKGCONFIG) --libs pappl)
 
 UNAME		:= $(shell uname)
 ifeq ($(UNAME),Darwin)
